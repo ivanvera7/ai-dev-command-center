@@ -3,17 +3,21 @@
 # Uso:
 #   preflight.sh                       # revisa lo que está en staging + rama/remoto
 #   preflight.sh --scan-only           # solo escanea secretos en staging, cambios sin confirmar y no rastreados
+#   preflight.sh --staged              # solo escanea secretos y archivos sensibles en staging (hook pre-commit)
+#   preflight.sh --range BASE HEAD     # solo escanea lo añadido entre dos commits (hook pre-push y CI)
 #   preflight.sh --expected-remote URL # además exige que origin apunte a URL
 #   preflight.sh --push                # además exige `git config sdd.autoPush true` y bloquea la rama por defecto
 # Salida: 0 = sin bloqueos, 1 = bloqueos, 2 = no es un repo git o argumento inválido.
 # Nunca imprime el contenido de un posible secreto: solo archivo:línea.
 set -uo pipefail
 
-scan_only=0; expected_remote=""; for_push=0
+scan_only=0; expected_remote=""; for_push=0; staged_only=0; range_a=""; range_b=""
 while [ $# -gt 0 ]; do
   case "$1" in
     --scan-only) scan_only=1 ;;
     --push) for_push=1 ;;
+    --staged) staged_only=1 ;;
+    --range) range_a="${2:-}"; range_b="${3:-}"; [ -n "$range_a" ] && [ -n "$range_b" ] || { echo "--range necesita BASE y HEAD" >&2; exit 2; }; shift 2 ;;
     --expected-remote) expected_remote="${2:-}"; [ -n "$expected_remote" ] || { echo "falta la URL de --expected-remote" >&2; exit 2; }; shift ;;
     *) echo "argumento desconocido: $1" >&2; exit 2 ;;
   esac
@@ -88,7 +92,21 @@ scan() { # $1 = etiqueta, resto = argumentos de git diff
   [ -n "$hits" ] && block "$label: posible secreto en:"$'\n'"$(echo "$hits" | sed 's/^/    /')"
 }
 
+if [ -n "$range_a" ]; then
+  for r in "$range_a" "$range_b"; do
+    if ! git rev-parse -q --verify "$r^{tree}" >/dev/null; then echo "BLOQUEO: revisión desconocida '$r'"; exit 2; fi
+  done
+  scan "commits" "$range_a" "$range_b"
+  [ "$blocks" -eq 0 ] && echo "OK: sin secretos en $range_a..$range_b" && exit 0
+  exit 1
+fi
+
 scan "staging" --cached
+if [ "$staged_only" = 1 ]; then
+  [ "$blocks" -eq 0 ] && exit 0
+  echo "Commit bloqueado por ai-dev-kit. Si es un falso positivo, cambia el valor; saltarlo (git commit --no-verify) es decisión tuya, nunca del agente." >&2
+  exit 1
+fi
 if [ "$scan_only" = 1 ]; then
   git rev-parse --verify -q HEAD >/dev/null && scan "sin confirmar" HEAD
   # Archivos no rastreados (respetando .gitignore): nombre y contenido, también binarios.

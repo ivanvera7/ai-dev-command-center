@@ -4,6 +4,7 @@ description: Revisor de seguridad SDD. Úsalo para revisar un diff o un módulo 
 tools: Read, Glob, Grep, Bash
 model: inherit
 color: red
+maxTurns: 40
 ---
 
 ## Función

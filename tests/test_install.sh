@@ -22,6 +22,31 @@ eq "CLAUDE.md tiene un solo bloque" 1 "$(grep -cx '<!-- ai-dev-kit:start -->' "$
 check "manifiesto creado" test -s "$H1/.claude/.ai-dev-kit/manifest"
 check "las copias de seguridad se ignoran en git" grep -qx 'backups/' "$H1/.claude/.ai-dev-kit/.gitignore"
 
+echo "guard en settings.json (AC-102)"
+check "guard instalado" test -x "$H1/.claude/hooks/ai-dev-kit-guard.sh"
+eq "una entrada del guard" 1 "$(jq '[.hooks.PreToolUse[].hooks[].command | select(contains("ai-dev-kit-guard"))] | length' "$H1/.claude/settings.json")"
+check "el comando apunta al guard instalado" sh -c "jq -r '.hooks.PreToolUse[0].hooks[0].command' '$H1/.claude/settings.json' | grep -qF '$H1/.claude/hooks/ai-dev-kit-guard.sh'"
+HG="$T/hg"; mkdir -p "$HG/.claude"
+cat > "$HG/.claude/settings.json" <<'JSON'
+{"model":"opus","env":{"X":"1"},"hooks":{"PreToolUse":[{"matcher":"Bash","hooks":[{"type":"command","command":"rtk hook claude"}]}],"Stop":[{"matcher":"","hooks":[{"type":"command","command":"otro"}]}]}}
+JSON
+jq -S . "$HG/.claude/settings.json" > "$T/hg.orig"
+run "$HG" "$KIT" --global --yes > /dev/null; eq "termina con 0" 0 $?
+eq "conserva el hook previo de PreToolUse" "rtk hook claude" "$(jq -r '.hooks.PreToolUse[0].hooks[0].command' "$HG/.claude/settings.json")"
+eq "conserva otros eventos y ajustes" "otro opus 1" "$(jq -r '"\(.hooks.Stop[0].hooks[0].command) \(.model) \(.env.X)"' "$HG/.claude/settings.json")"
+run "$HG" "$KIT" --global --yes > /dev/null
+eq "reinstalar no duplica el guard" 1 "$(jq '[.hooks.PreToolUse[].hooks[].command | select(contains("ai-dev-kit-guard"))] | length' "$HG/.claude/settings.json")"
+check "copia de seguridad de settings.json" sh -c "ls '$HG'/.claude/.ai-dev-kit/backups/*/settings.json"
+unrun "$HG" "$KIT" --yes > /dev/null
+check "desinstalar deja settings.json como estaba" sh -c "jq -S . '$HG/.claude/settings.json' | cmp -s - '$T/hg.orig'"
+HS="$T/hs"; mkdir -p "$HS"; run "$HS" "$KIT" --global --yes > /dev/null
+jq '.hooks.PreToolUse[0].hooks += [{"type":"command","command":"mi-auditoria.sh"}]' "$HS/.claude/settings.json" > "$T/s" && cat "$T/s" > "$HS/.claude/settings.json"
+unrun "$HS" "$KIT" --yes > /dev/null
+eq "desinstalar conserva un hook del usuario en la misma entrada" "mi-auditoria.sh" "$(jq -r '.hooks.PreToolUse[0].hooks[0].command' "$HS/.claude/settings.json")"
+HJ="$T/hj"; mkdir -p "$HJ/.claude"; echo '{ roto' > "$HJ/.claude/settings.json"
+run "$HJ" "$KIT" --global --yes > /dev/null 2>&1; check "settings.json inválido: aborta" test $? -ne 0
+check "settings.json inválido: no instala nada" test ! -e "$HJ/.claude/agents"
+
 echo "sin terminal y sin --yes: no aplica cambios con riesgo"
 H0="$T/h0"; mkdir -p "$H0/.claude"; echo x > "$H0/.claude/CLAUDE.md"
 run "$H0" "$KIT" --global > /dev/null; eq "sale con 3" 3 $?
@@ -107,6 +132,7 @@ check "uninstall --force guarda copia" sh -c "grep -rqx '# vuelve a modificarlo'
 echo "CLAUDE.md: restauración exacta"
 H5="$T/h5"; mkdir -p "$H5"; run "$H5" "$KIT" --global --yes > /dev/null; unrun "$H5" "$KIT" --yes > /dev/null
 check "borra el CLAUDE.md que creó el kit" test ! -e "$H5/.claude/CLAUDE.md"
+check "borra el settings.json que creó el kit" test ! -e "$H5/.claude/settings.json"
 H7="$T/h7"; mkdir -p "$H7/.claude/agents"; : > "$H7/.claude/CLAUDE.md"
 run "$H7" "$KIT" --global --yes > /dev/null; unrun "$H7" "$KIT" --yes > /dev/null
 check "conserva un CLAUDE.md vacío del usuario" test -f "$H7/.claude/CLAUDE.md"
@@ -141,6 +167,7 @@ check "agentes en el proyecto" test -f "$P/.claude/agents/sdd-orchestrator.md"
 check "skills en el proyecto" test -f "$P/.claude/skills/sdd-init/SKILL.md"
 check "bloque en el CLAUDE.md del proyecto" grep -qx '<!-- ai-dev-kit:start -->' "$P/CLAUDE.md"
 check "no toca el HOME" test ! -e "$H6/.claude"
+check "guard del proyecto con \$CLAUDE_PROJECT_DIR" sh -c "jq -r '.hooks.PreToolUse[0].hooks[0].command' '$P/.claude/settings.json' | grep -qF '\$CLAUDE_PROJECT_DIR/.claude/hooks/ai-dev-kit-guard.sh'"
 check "detecta carpeta existente" grep -q 'Proyecto: carpeta existente' "$T/out7"
 check "el estado versionable no contiene rutas absolutas" sh -c "! grep -rqF '$T' --exclude-dir=backups '$P/.claude/.ai-dev-kit'"
 unrun "$H6" "$KIT" --project "$P" --yes > /dev/null

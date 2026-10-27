@@ -17,7 +17,7 @@
 - Ubicación de las pruebas: <...>
 
 ## 4. Estándares de calidad
-- Comandos obligatorios antes de publicar (rellenar con los reales del proyecto):
+- Comandos obligatorios antes de publicar: los de `.sdd/checks` (los ejecutan el hook pre-push, el CI y `/sdd-validate`):
   - Pruebas: `<cmd>`
   - Tipos / compilación: `<cmd o "no aplica">`
   - Lint / formato: `<cmd o "no aplica">`
@@ -31,6 +31,7 @@
 ## 6. Pruebas
 - Unitarias: <runner>. Integración: <...>. E2E: <... o "no aplica">.
 - Cada criterio de aceptación tiene al menos una prueba o una verificación manual documentada en `acceptance.md`.
+- Interfaz: verificación en navegador con `<Playwright | herramienta de navegador | no aplica>`.
 
 ## 7. Política de dependencias
 - Antes de añadir una dependencia: comprobar si el código, la librería estándar o una dependencia instalada ya lo resuelve.
@@ -44,6 +45,7 @@
 - Publicación automática: permitida
   (`permitida` = cada persona puede activarla en su clon con `git config --local sdd.autoPush true`; `prohibida` = nunca hay push automático en este repo. El push nunca va a la rama principal.)
 - Nunca force push. Merge a la rama principal mediante PR o según indique el usuario.
+- Salvaguardas: hooks de Git `pre-commit`/`pre-push` (instalados por `/sdd-init`), CI `sdd-checks`: `<sí/no>`, rama por defecto protegida en GitHub: `<sí/no/no disponible en el plan>`.
 
 ## 9. Criterios para aceptar cambios
 1. Spec y tasks actualizadas. 2. AC verificados con evidencia. 3. Comandos obligatorios en verde. 4. Revisión de código sin bloqueantes. 5. Sin hallazgos de seguridad críticos o altos. 6. `memory.md` al día. 7. Diff limpio (sin cambios ajenos ni secretos).

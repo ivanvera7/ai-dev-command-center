@@ -4,6 +4,7 @@ description: Depurador SDD. Úsalo ante un error, prueba fallida o comportamient
 tools: Read, Write, Edit, Glob, Grep, Bash, Skill
 model: inherit
 color: orange
+maxTurns: 60
 ---
 
 ## Función

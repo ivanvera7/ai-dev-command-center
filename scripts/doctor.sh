@@ -36,6 +36,35 @@ for scope in "$CFG" ${PROJECT_DIR:+"$PROJECT_DIR/.claude"}; do
   fi
 done
 
+if command -v jq >/dev/null 2>&1 && [ -s "$CFG/settings.json" ] \
+   && jq -e '[.hooks.PreToolUse[]?.hooks[]?.command // ""] | any(contains("ai-dev-kit-guard"))' "$CFG/settings.json" >/dev/null 2>&1; then
+  ok "guard activo en $CFG/settings.json"
+else
+  opt "guard no instalado en $CFG/settings.json"; hint "./install.sh (componente guard)"
+fi
+
+repo="${PROJECT_DIR:-.}"
+if git -C "$repo" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  root=$(git -C "$repo" rev-parse --show-toplevel)
+  echo
+  echo "Proyecto $root"
+  hooks_dir=$(cd "$root" && git rev-parse --git-path hooks)
+  case "$hooks_dir" in /*) ;; *) hooks_dir="$root/$hooks_dir" ;; esac
+  for h in pre-commit pre-push; do
+    if grep -q 'ai-dev-kit:' "$hooks_dir/$h" 2>/dev/null; then ok "hook $h del kit"
+    else opt "hook $h del kit no instalado"; hint "/sdd-init (o bash <skills>/sdd-init/scripts/setup-project.sh)"; fi
+  done
+  if grep -Evq '^[[:space:]]*(#|$)' "$root/.sdd/checks" 2>/dev/null; then ok ".sdd/checks: $(grep -Evc '^[[:space:]]*(#|$)' "$root/.sdd/checks") comando(s)"
+  else opt ".sdd/checks vacío o ausente"; fi
+  [ -f "$root/.github/workflows/sdd-checks.yml" ] && ok "CI sdd-checks" || opt "sin CI sdd-checks"
+  if command -v jq >/dev/null 2>&1 && [ -s "$root/.claude/settings.json" ] \
+     && jq -e '[.hooks.PreToolUse[]?.hooks[]?.command // ""] | any(contains("ai-dev-kit-guard"))' "$root/.claude/settings.json" >/dev/null 2>&1; then
+    ok "guard del proyecto en .claude/settings.json"
+  fi
+  if [ "$(git -C "$root" config --local --get sdd.autoPush 2>/dev/null)" = true ]; then ok "push automático activado en este clon"
+  else opt "push automático desactivado en este clon"; fi
+fi
+
 echo
 echo "Herramientas externas (opcionales; el kit funciona sin ellas con menos capacidades)"
 plugins=""

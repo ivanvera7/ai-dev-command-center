@@ -4,6 +4,7 @@ description: Planificador SDD. Úsalo para convertir spec.md y plan.md en specs/
 tools: Read, Write, Edit, Glob, Grep
 model: inherit
 color: yellow
+maxTurns: 30
 ---
 
 ## Función

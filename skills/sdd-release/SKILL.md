@@ -10,7 +10,7 @@ argument-hint: "<feature-slug> [--no-push] [--docs]"
 
 **Autorización:**
 - **Commit** (local): automático cuando la tarea SDD supera esta puerta.
-- **Push**: automático solo si la persona lo activó en este clon con `git config --local sdd.autoPush true` (`/sdd-init` lo pregunta) y la constitución no lo prohíbe, y solo a una rama de trabajo, nunca a la rama por defecto (`main`, `master` o `origin/HEAD`) aunque no esté protegida. El ajuste es local: no se versiona ni se hereda al clonar. Sin él, el comportamiento es `--no-push`: el commit queda local y se informa. Nunca cambies `sdd.autoPush` sin que el usuario lo pida.
+- **Push**: automático solo si la persona lo activó en este clon con `git config --local sdd.autoPush true` (el usuario lo activa escribiendo `! git config --local sdd.autoPush true`; el guard impide que lo haga el agente) y la constitución no lo prohíbe, y solo a una rama de trabajo, nunca a la rama por defecto (`main`, `master` o `origin/HEAD`) aunque no esté protegida. El ajuste es local: no se versiona ni se hereda al clonar. Sin él, el comportamiento es `--no-push`: el commit queda local y se informa. Nunca cambies `sdd.autoPush` sin que el usuario lo pida.
 - Ninguna autorización cubre: borrar ramas o repos, reescribir historial compartido, force push, publicar secretos, cambiar permisos o protecciones de GitHub, publicar en un remoto distinto del esperado, desplegar a producción ni ejecutar migraciones destructivas. Todo eso requiere autorización específica.
 
 **Entradas:** `$ARGUMENTS` = feature; `--no-push` deja el commit local; `--docs` = cierre de solo documentación (puerta reducida: puntos 1, 8, 9, 10).
@@ -45,13 +45,13 @@ Si un punto falla: corrige y repite las comprobaciones afectadas. Si no puedes, 
 3. `git diff --cached --stat` y revisa la lista.
 4. Ejecuta `bash ${CLAUDE_SKILL_DIR}/scripts/preflight.sh` (añade `--expected-remote <url>` cuando el remoto esperado esté en la constitución). Código distinto de 0: corrige, no continúes. El script solo muestra `archivo:línea` de un posible secreto; no copies su contenido en el chat.
 5. Mensaje: Conventional Commits salvo convención del repo (`feat(<scope>): <qué>` + cuerpo con IDs FR/AC y feature). Respeta las líneas de atribución que indique el entorno.
-6. `git commit` (nunca `--no-verify`; si un hook falla, corrige la causa). Comprueba `git log -1 --stat`.
+6. `git commit` (nunca `--no-verify`; el guard lo impide). El hook `pre-commit` del proyecto vuelve a escanear secretos; si bloquea, corrige la causa. Comprueba `git log -1 --stat`.
 
 ## D. Push
 
 1. Si `--no-push`, `git config --local --get sdd.autoPush` no es `true`, la constitución dice `Publicación automática: prohibida`, no hay `origin`, o no hay autenticación: no hagas push; deja el commit local y explica qué falta.
 2. Ejecuta `bash ${CLAUDE_SKILL_DIR}/scripts/preflight.sh --push` (con `--expected-remote` si procede). Bloquea si `sdd.autoPush` no está activado o si la rama es la rama por defecto: el push automático nunca va a `main`/`master`/`origin/HEAD` ni a ramas protegidas; para eso hace falta autorización específica del usuario.
-3. `git push -u origin <rama>` la primera vez, `git push` después. **Nunca** `--force` ni `--force-with-lease`.
+3. `git push -u origin <rama>` la primera vez, `git push` después. **Nunca** `--force` ni `--force-with-lease` (el guard lo deniega). El hook `pre-push` bloquea pushes forzados, borrados, secretos en los commits, fallos de `.sdd/checks` y el push del agente a la rama por defecto: si bloquea, corrige la causa e informa.
 4. Rechazo (non-fast-forward, permisos, protección, revisión obligatoria): DETENTE. No hagas rebase/merge automático de trabajo ajeno sin autorización; explica la acción necesaria.
 5. Confirma con git: `git status -sb` (sin `ahead`) y `git rev-parse HEAD` == `git rev-parse @{u}`.
 6. PR: si el repo trabaja con PR y el usuario lo ha pedido o la constitución lo establece, `gh pr create` con plantilla del repo; si no, indica el enlace que imprime git.

@@ -4,6 +4,7 @@ description: Arquitecto SDD. Úsalo para diseñar la solución técnica de una s
 tools: Read, Write, Edit, Glob, Grep, Bash, Skill, WebFetch, mcp__plugin_context7_context7__resolve-library-id, mcp__plugin_context7_context7__query-docs
 model: inherit
 color: cyan
+maxTurns: 50
 ---
 
 ## Función

@@ -32,4 +32,4 @@ jobs:
         with:
           persist-credentials: false
       - name: shellcheck
-        run: shellcheck -S error install.sh uninstall.sh update.sh lib/common.sh scripts/doctor.sh skills/sdd-release/scripts/*.sh tests/*.sh
+        run: shellcheck -S error install.sh uninstall.sh update.sh lib/common.sh scripts/doctor.sh hooks/*.sh skills/sdd-release/scripts/*.sh skills/sdd-init/scripts/*.sh skills/sdd-init/templates/git-hooks/* tests/*.sh

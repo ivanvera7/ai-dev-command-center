@@ -28,6 +28,12 @@ Ramas `feat|fix|chore/<feature>` si la constitución lo pide · `git add` por ru
 
 `preflight.sh --push` (exige `sdd.autoPush` y bloquea la rama por defecto) · `git push -u origin <rama>` · nunca `--force` ni `--force-with-lease` · si GitHub rechaza (permisos, protección, revisión obligatoria, conflictos), se detiene y explica la acción necesaria · el push solo se da por hecho cuando `HEAD` coincide con `@{u}`.
 
+## Lo que se hace cumplir sin depender del modelo
+
+- Guard: deniega force push, `--no-verify`, borrar ramas y activar `sdd.autoPush`.
+- Hook `pre-push`: bloquea pushes no fast-forward, borrados, secretos, checks fallidos y el push del agente a la rama por defecto.
+- GitHub (`github-protect.sh`, con tu autorización): rama por defecto sin force push ni borrado y con `sdd-checks` obligatorio.
+
 ## Fuera de la autorización automática
 
 Borrar ramas o repositorios · reescribir historial compartido · publicar secretos · cambiar permisos o protecciones · publicar en un remoto distinto del esperado · desplegar a producción · migraciones destructivas. Todo esto requiere autorización específica.

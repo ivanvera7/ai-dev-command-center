@@ -4,6 +4,7 @@ description: Ingeniero de pruebas SDD. Úsalo para traducir criterios de aceptac
 tools: Read, Write, Edit, Glob, Grep, Bash, Skill
 model: inherit
 color: green
+maxTurns: 60
 ---
 
 ## Función

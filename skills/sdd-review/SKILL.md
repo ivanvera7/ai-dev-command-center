@@ -19,7 +19,7 @@ argument-hint: "<feature-slug> [--security]"
 3. `security-reviewer` si se pasa `--security` o si el diff toca: autenticación/autorización, entrada de usuario, SQL/comandos/ficheros/red, datos personales, pagos, criptografía, configuración de despliegue, permisos, o dependencias. Si no aplica, anota "no requerida: <motivo>".
 4. Ejecuta ambos en paralelo (son solo lectura).
 5. Procesa hallazgos con `superpowers:receiving-code-review`: verifica cada uno contra el código; no aceptes ni rechaces a ciegas.
-6. Corrige BLOQUEANTE y seguridad crítica/alta mediante el especialista o `debugger`; vuelve a ejecutar `/sdd-validate` para las partes afectadas y una nueva revisión del diff corregido.
+6. Corrige BLOQUEANTE y seguridad crítica/alta mediante el especialista o `debugger`; vuelve a ejecutar `/sdd-validate` para las partes afectadas y una nueva revisión del diff corregido. Máximo 3 rondas de revisión-corrección; si siguen abiertos, detente e informa.
 7. IMPORTANTE/MENOR: corrige si es barato y está en alcance; si no, regístralo en `memory.md` (errores conocidos) o como tarea nueva.
 
 ## Comprobaciones

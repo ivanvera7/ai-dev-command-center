@@ -35,9 +35,9 @@ resolve_target() {
   MANIFEST="$STATE/manifest"
 }
 
-# Una ruta del manifiesto solo es válida dentro de agents/ o skills/ y sin "..".
+# Una ruta del manifiesto solo es válida dentro de agents/, skills/ o hooks/ y sin "..".
 valid_rel() {
-  case "$1" in agents/?*|skills/?*) ;; *) return 1 ;; esac
+  case "$1" in agents/?*|skills/?*|hooks/?*) ;; *) return 1 ;; esac
   case "/$1/" in */../*|*/./*|*//*) return 1 ;; esac
   return 0
 }
@@ -74,7 +74,7 @@ check_state() {
   [ -L "$BASE" ] && die "la carpeta .claude del proyecto es un enlace simbólico: $BASE"
   [ -L "$STATE" ] && die "enlace simbólico en el destino: $STATE; no se ha cambiado nada"
   local f
-  for f in manifest VERSION .gitignore claude-md-created claude-md-no-final-newline backups; do
+  for f in manifest VERSION .gitignore claude-md-created claude-md-no-final-newline settings-created backups; do
     [ -L "$STATE/$f" ] && die "enlace simbólico en el destino: $STATE/$f; no se ha cambiado nada"
   done
   return 0
@@ -90,7 +90,7 @@ manifest_hash() {
 # agents/ o skills/ (esas dos carpetas y sus superiores no se tocan).
 prune_dirs() { # $1 = ruta relativa del archivo retirado
   local d; d=$(dirname "$1")
-  while [ "$d" != agents ] && [ "$d" != skills ] && [ "$d" != . ]; do
+  while [ "$d" != agents ] && [ "$d" != skills ] && [ "$d" != hooks ] && [ "$d" != . ]; do
     rmdir "$BASE/$d" 2>/dev/null || break
     d=$(dirname "$d")
   done
@@ -114,6 +114,31 @@ backup() { # $1 = ruta absoluta, $2 = ruta relativa dentro del backup
   mkdir -p "$(dirname "$BACKUP_DIR/$2")"
   cp -p "$1" "$BACKUP_DIR/$2"
 }
+
+# --- Guard en settings.json (requiere jq) ---
+GUARD_FILE=ai-dev-kit-guard.sh
+GUARD_MATCHER='Bash|Edit|Write|NotebookEdit'
+guard_command() {
+  if [ "$MODE" = global ]; then printf 'bash "%s/hooks/%s"' "$BASE" "$GUARD_FILE"
+  else printf 'bash "$CLAUDE_PROJECT_DIR/.claude/hooks/%s"' "$GUARD_FILE"; fi
+}
+# Imprime settings.json sin las entradas del guard (las identifica por el nombre del script).
+settings_without_guard() { # $1 = archivo
+  jq --arg g "$GUARD_FILE" '
+    if (.hooks.PreToolUse // null) == null then . else
+      .hooks.PreToolUse |= (map(.hooks |= map(select((.command // "") | contains($g) | not))) | map(select((.hooks | length) > 0)))
+      | if (.hooks.PreToolUse | length) == 0 then del(.hooks.PreToolUse) else . end
+      | if (.hooks | length) == 0 then del(.hooks) else . end
+    end' "$1"
+}
+# Imprime settings.json con una única entrada del guard.
+settings_with_guard() { # $1 = archivo (puede no existir)
+  local src="$1"; [ -s "$src" ] || src=/dev/null
+  { if [ "$src" = /dev/null ]; then echo '{}'; else settings_without_guard "$src"; fi; } \
+  | jq --arg m "$GUARD_MATCHER" --arg c "$(guard_command)" \
+      '.hooks.PreToolUse = ((.hooks.PreToolUse // []) + [{matcher:$m, hooks:[{type:"command", command:$c, timeout:10}]}])'
+}
+has_guard() { [ -s "$1" ] && jq -e --arg g "$GUARD_FILE" '[.hooks.PreToolUse[]?.hooks[]?.command // ""] | any(contains($g))' "$1" >/dev/null 2>&1; }
 
 # Estado del bloque en un CLAUDE.md: none | ok | broken.
 # ok = exactamente un marcador de inicio y uno de fin, en ese orden.

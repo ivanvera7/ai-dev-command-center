@@ -30,6 +30,7 @@ Programar con un agente de IA sin método tiene dos fallos típicos: el agente c
 - Antes de escribir código hay una **spec** con requisitos numerados (`FR-001`) y criterios de aceptación verificables (`AC-001`).
 - Cada fase deja un **artefacto en el repo** (`spec.md`, `plan.md`, `tasks.md`, `acceptance.md`, `memory.md`), así la siguiente sesión sabe dónde estás.
 - Nada se da por terminado sin **evidencia**: pruebas ejecutadas, revisión de código, revisión de seguridad cuando aplica.
+- Las reglas críticas **se hacen cumplir**, no solo se piden: un guard en Claude Code, hooks de Git por proyecto y CI con rama protegida ([guardarraíles](docs/guardrails.md)).
 - El **commit** es automático, pero solo después de una puerta de calidad de 10 puntos y un escaneo de secretos. El **push** de la rama de trabajo también lo es si lo activas en tu clon (`/sdd-init` lo pregunta; queda en `git config`, no en el repo). Nunca a `main`, nunca con force.
 
 <br/>
@@ -39,7 +40,7 @@ Programar con un agente de IA sin método tiene dos fallos típicos: el agente c
 | | Tu situación | Qué hacer | Frecuencia |
 |:-:|---|---|---|
 | **01** | Instalar el kit en tu máquina | `git clone` + `./install.sh` ([guía](docs/installation.md)) | Una vez por ordenador |
-| **02** | Empezar o adoptar un proyecto | Abre `claude` en el repo y ejecuta `/sdd-init` | Una vez por proyecto |
+| **02** | Empezar o adoptar un proyecto | Abre `claude` en el repo y ejecuta `/sdd-init`: constitución, memoria, hooks de Git, CI y agente por defecto | Una vez por proyecto (y por clon) |
 | **03** | Día a día | Abre `claude` en el repo y describe lo que quieres | Siempre |
 
 ```bash
@@ -54,7 +55,7 @@ scripts/doctor.sh          # comprueba requisitos y herramientas opcionales
 ┌──────────────────────────┐      ┌──────────────────────────┐      ┌──────────────────────────┐
 │  01 · MÁQUINA            │      │  02 · PROYECTO           │      │  03 · DÍA A DÍA          │
 │  ./install.sh            │ ───▶ │  /sdd-init               │ ───▶ │  "añade login"           │
-│  agentes · skills        │      │  constitución · memoria  │      │  spec → … → push         │
+│  agentes · skills · guard│      │  constitución · hooks    │      │  spec → … → push         │
 │  ── una vez ──           │      │  ── una vez ──           │      │  ── sin prompts extra ── │
 └──────────────────────────┘      └──────────────────────────┘      └──────────────────────────┘
 ```
@@ -121,6 +122,18 @@ Once skills `/sdd-*` ([`skills/`](skills/)), invocables por ti o por el orquesta
 
 <br/>
 
+## ◇ Guardarraíles
+
+| Capa | Dónde | Qué impide |
+|---|---|---|
+| **Guard** | hook de Claude Code, global | force push, `--no-verify`, `reset --hard`, `rm -rf` fuera del proyecto, `curl \| sh`, activar el push por su cuenta; pide confirmación para dependencias, despliegues y bases de datos |
+| **Hooks de Git** | `.git/hooks` de cada clon | commits con secretos; pushes forzados, borrados, con secretos o con checks fallidos; push del agente a `main` |
+| **CI + rama protegida** | GitHub | merge sin `sdd-checks` en verde; force push y borrado de la rama principal; secretos (push protection) |
+
+Además: contenido externo tratado como datos, verificación de dependencias, máximo 3 rondas de corrección, `maxTurns` por agente y verificación visual de interfaces. Detalle en [docs/guardrails.md](docs/guardrails.md).
+
+<br/>
+
 ## ◇ Herramientas soportadas
 
 El kit **no incluye** software de terceros: se integra con lo que tengas instalado y funciona sin ello, con menos capacidades. `scripts/doctor.sh` te dice qué hay y cómo instalar lo que falte. Detalle en [docs/integrations.md](docs/integrations.md).
@@ -159,7 +172,7 @@ Otros usos: `/sdd-status` para retomar, `/sdd-spec <feature>` para lanzar una fa
 ./uninstall.sh --dry-run    # muestra qué se retiraría
 ./uninstall.sh              # retira solo lo que instaló el kit y no has modificado
 ./install.sh --project ../mi-app   # instalación solo para un proyecto (en mi-app/.claude)
-./install.sh --only skills         # solo algunos componentes
+./install.sh --only skills         # solo algunos componentes (agents, skills, instructions, guard)
 ```
 
 El instalador lleva un **manifiesto con hashes**: sabe qué archivos son suyos, actualiza solo los que no has tocado, no sobrescribe archivos ajenos (salvo `--force`, con copia de seguridad), escribe sus instrucciones en `CLAUDE.md` entre marcadores y, en modo proyecto, rechaza manifiestos manipulados y enlaces simbólicos. Cómo adaptar agentes, skills y plantillas: [docs/customization.md](docs/customization.md).
@@ -169,6 +182,7 @@ El instalador lleva un **manifiesto con hashes**: sabe qué archivos son suyos, 
 ## ◇ Componentes obligatorios y opcionales
 
 - **Obligatorios para el flujo:** las skills `sdd-*`, el agente `sdd-orchestrator` y el bloque de instrucciones. Requisitos: Claude Code, git y jq.
+- **Guard:** recomendado (se instala por defecto). Sin él, las reglas de Git y de borrado vuelven a depender solo del modelo.
 - **Agentes especialistas:** recomendados. Sin ellos el orquestador hace el trabajo él mismo, sin revisión independiente.
 - **Herramientas externas:** opcionales; cada agente sigue funcionando y declara lo que no pudo usar.
 
@@ -179,7 +193,7 @@ El instalador lleva un **manifiesto con hashes**: sabe qué archivos son suyos, 
 - Probado en macOS (bash 3.2) con Claude Code 2.1.311. Linux se prueba en CI; Windows solo vía WSL y sin probar.
 - La revisión visual de interfaces depende de que haya un navegador automatizable; si no, el agente lo declara como "no verificado visualmente".
 - El push automático está desactivado salvo que lo actives en cada clon (`git config --local sdd.autoPush true`), y requiere un remoto y autenticación ya configurados; el kit nunca pide credenciales.
-- El escaneo de secretos de `preflight.sh` es heurístico: reduce el riesgo, no lo elimina.
+- El escaneo de secretos de `preflight.sh` y el guard son heurísticos (analizan texto): reducen el riesgo, no lo eliminan. La capa que no se puede esquivar es la protección de rama en GitHub.
 - Si tienes skills `sdd-*` personales y además instalas el kit en un proyecto, Claude Code usa las personales.
 - Documentación solo en español en esta versión.
 
@@ -195,6 +209,7 @@ El instalador lleva un **manifiesto con hashes**: sabe qué archivos son suyos, 
 | [Flujo SDD](docs/sdd-workflow.md) | fases, artefactos, flujo abreviado, mantenimiento |
 | [Integraciones](docs/integrations.md) | Superpowers, Context7, Caveman, Ponytail, RTK, frontend-design, MCP, hooks |
 | [Memoria](docs/memory.md) | `memory.md` por proyecto |
+| [Guardarraíles](docs/guardrails.md) | guard, hooks de Git, CI y rama protegida |
 | [Seguridad](docs/security.md) · [GitHub](docs/github.md) | secretos, preflight, política de publicación |
 | [Problemas](docs/troubleshooting.md) · [Personalización](docs/customization.md) | |
 
