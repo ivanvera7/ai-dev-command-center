@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Funciones compartidas por install.sh y uninstall.sh. Se carga con `source`.
 # Compatible con bash 3.2 (macOS): sin arrays asociativos ni mapfile.
 

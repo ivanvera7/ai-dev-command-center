@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # Utilidades mínimas de prueba. Se carga con `source`.
 KIT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 FAILS=0
