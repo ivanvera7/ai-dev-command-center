@@ -16,7 +16,7 @@ Sistemas: macOS y Linux. Windows solo mediante WSL (sin probar).
 ## Instalar
 
 ```bash
-git clone https://github.com/<tu-usuario>/ai-dev-command-center.git
+git clone https://github.com/ivanvera7/ai-dev-command-center.git
 cd ai-dev-command-center
 ./install.sh --dry-run
 ./install.sh

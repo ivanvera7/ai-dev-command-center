@@ -43,7 +43,7 @@ Programar con un agente de IA sin método tiene dos fallos típicos: el agente c
 | **03** | Día a día | Abre `claude` en el repo y describe lo que quieres | Siempre |
 
 ```bash
-git clone https://github.com/<tu-usuario>/ai-dev-command-center.git
+git clone https://github.com/ivanvera7/ai-dev-command-center.git
 cd ai-dev-command-center
 ./install.sh --dry-run     # muestra qué va a añadir o modificar, sin tocar nada
 ./install.sh               # instala en ~/.claude (pide confirmación si hay riesgo)
