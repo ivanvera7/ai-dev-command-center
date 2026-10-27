@@ -18,11 +18,11 @@
 | Comprobación | Comando | Resultado |
 |---|---|---|
 | Suite de pruebas | `bash tests/run.sh` | verde en macOS (bash 3.2) |
-| Lint | `shellcheck` | no ejecutado en local (no instalado); se ejecuta en CI |
+| Lint | `shellcheck -S error` en CI | pasa (run 40575601797) |
+| CI Linux y macOS | GitHub Actions | pasa (run 40575601797) |
 | Revisión de código | code-reviewer (2 rondas) | 18 hallazgos + 6 regresiones: corregidos con prueba; sin bloqueantes |
 | Revisión de seguridad | security-reviewer (3 rondas) | 8 hallazgos medios/bajos + 2 nuevos: corregidos; sin críticos, altos ni medios abiertos |
 | Rendimiento del preflight | diff de 20 000 líneas | 0,2 s |
 
 ## Limitaciones
-- Linux y shellcheck: solo en CI, pendiente del primer run tras publicar.
 - Flujo SDD completo con el kit instalado desde este repo: probado antes con la instalación manual equivalente (proyecto de prueba `slugify`); no repetido con la instalación gestionada.

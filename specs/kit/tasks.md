@@ -10,6 +10,6 @@ Leyenda: [ ] pendiente · [~] en curso · [x] hecha · [!] bloqueada
 ## T-006 [x] Documentación y README — FR-011
 ## T-007 [x] Verificación real con Claude Code en configuración aislada — AC-011
 ## T-008 [x] Revisión de código y seguridad, correcciones, memory.md, commit local — puerta de calidad
-## T-009 [!] Publicar en GitHub — bloqueada por Q-01 (autorización del propietario: nombre, cuenta, visibilidad)
+## T-009 [x] Publicar en GitHub — autorizado por el propietario: ivanvera7/ai-dev-command-center, público
 
 Evidencia: specs/kit/acceptance.md.

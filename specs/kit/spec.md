@@ -32,7 +32,7 @@ El propietario configuró en su máquina un sistema SDD global para Claude Code 
 - A-04: El kit no incluye hooks propios: el sistema real no tiene ninguno (los hooks presentes pertenecen a RTK, Caveman y pixel-agents).
 
 ## Preguntas abiertas
-- Q-01 [BLOQUEA publicación]: nombre, cuenta y visibilidad del repositorio en GitHub.
+- Q-01 (resuelta 2026-10-27): `ivanvera7/ai-dev-command-center`, público.
 
 ## Criterios de aceptación
 - AC-001 (FR-001): cada archivo de `agents/` tiene frontmatter `name` y `description` y las secciones exigidas.
