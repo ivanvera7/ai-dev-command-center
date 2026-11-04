@@ -47,7 +47,14 @@ awk -F'\t' '$1=="REMOVE" {print "  - " $2}' "$PLAN"
 awk -F'\t' '$1=="KEEP"   {print "  · se conserva (lo modificaste; --force para retirarlo): " $2}' "$PLAN"
 awk -F'\t' '$1=="GONE"   {print "  · ya no existe: " $2}' "$PLAN"
 [ "$bstate" = ok ] && say "  - quitar el bloque SDD de $CLAUDE_MD (el resto se conserva)"
-say "  No se tocan: otros agentes y skills, settings, memoria de proyectos ni specs."
+SETTINGS="$BASE/settings.json"
+guard_on=0
+if [ -f "$SETTINGS" ] && grep -q "$GUARD_FILE" "$SETTINGS"; then
+  command -v jq >/dev/null 2>&1 || die "el guard está en $SETTINGS y falta jq para quitarlo sin dañar el archivo; instala jq (no se ha cambiado nada)"
+  if [ "$MODE" = project ] && [ -L "$SETTINGS" ]; then die "enlace simbólico en el destino: $SETTINGS"; fi
+  guard_on=1; say "  - quitar el guard de $SETTINGS (el resto se conserva)"
+fi
+say "  No se tocan: otros agentes y skills, el resto de settings.json, memoria de proyectos ni specs."
 
 if [ "$DRY" = 1 ]; then say ""; say "--dry-run: no se ha modificado nada."; exit 0; fi
 confirm "¿Desinstalar?"
@@ -73,6 +80,13 @@ if [ "$bstate" = ok ]; then
   else cat "$TMP/claude.new" > "$CLAUDE_MD"; fi
 fi
 rm -f "$STATE/claude-md-created" "$STATE/claude-md-no-final-newline"
+if [ "$guard_on" = 1 ]; then
+  backup "$SETTINGS" "settings.json"
+  settings_without_guard "$SETTINGS" > "$TMP/settings.new" && cat "$TMP/settings.new" > "$SETTINGS"
+  # Si el kit creó settings.json y ya no queda nada, se borra.
+  if [ -f "$STATE/settings-created" ] && [ "$(jq -c . "$SETTINGS")" = '{}' ]; then rm -f "$SETTINGS"; fi
+fi
+rm -f "$STATE/settings-created"
 
 kept=$(awk -F'\t' '$1=="KEEP"' "$PLAN" | wc -l | tr -d ' ')
 if [ "$kept" = 0 ]; then rm -f "$MANIFEST" "$STATE/VERSION"

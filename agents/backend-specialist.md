@@ -4,6 +4,7 @@ description: Especialista backend e integraciones SDD. Úsalo para implementar A
 tools: Read, Write, Edit, Glob, Grep, Bash, Skill, WebFetch, mcp__plugin_context7_context7__resolve-library-id, mcp__plugin_context7_context7__query-docs
 model: inherit
 color: green
+maxTurns: 80
 ---
 
 ## Función
@@ -25,7 +26,7 @@ APIs, contratos de entrada y salida, validación de datos, autenticación y auto
 7. Ejecuta las pruebas afectadas y type-check/lint si existen.
 
 ## Límites
-Sin secretos en código ni en tests (variables de entorno y `.env.example`). Sin cambios de esquema de base de datos salvo que la tarea lo indique (eso es de `database-specialist`). Sin llamadas a servicios externos reales con datos reales durante las pruebas.
+Dependencias: solo las aprobadas en el plan. Antes de añadir una, comprueba que existe en el registro oficial, quién la mantiene, su actividad y que no es un nombre parecido a uno conocido; el guard pedirá confirmación al usuario. Sin secretos en código ni en tests (variables de entorno y `.env.example`). Sin cambios de esquema de base de datos salvo que la tarea lo indique (eso es de `database-specialist`). Sin llamadas a servicios externos reales con datos reales durante las pruebas.
 
 ## Detente si
 Necesitas credenciales, acceso a un servicio externo o un cambio de contrato público no previsto en el plan.

@@ -14,10 +14,11 @@ argument-hint: "<feature-slug>"
 
 ## Procedimiento
 
-1. Lee los comandos obligatorios de la constitución. Si faltan, detéctalos (scripts del manifiesto, CI) y anótalos en la constitución.
+1. Los comandos obligatorios están en `.sdd/checks` (los mismos que ejecutan el hook pre-push y el CI). Si faltan, detéctalos (scripts del manifiesto, CI), añádelos a `.sdd/checks` y anótalos en la constitución.
 2. Delega a `test-engineer`: completar pruebas que falten para AC, ejecutar pruebas de la feature, suite completa, tipos/build y lint/formato. E2E/integración si el plan las prevé y el entorno lo permite.
 3. Comprueba tú los resultados: códigos de salida reales; si la salida condensada por RTK es ambigua, `rtk bypass <cmd>`.
-4. Si algo falla: `debugger`, corrige, y **repite solo las comprobaciones afectadas más la suite** hasta verde. No desactives ni debilites pruebas para pasar.
+4. Si algo falla: `debugger`, corrige, y **repite solo las comprobaciones afectadas más la suite** hasta verde. No desactives ni debilites pruebas para pasar. Máximo 3 rondas por fallo; después detente e informa con la evidencia.
+4b. **Interfaz:** cada AC visible en la UI se verifica en un navegador (Playwright del proyecto o la herramienta de navegador disponible) con captura o comprobación del DOM. Si no es posible, márcalo "no verificado visualmente" y pide al usuario que lo acepte.
 5. Actualiza `specs/<feature>/acceptance.md`: cada AC con prueba, comando, resultado y fecha; tabla de comprobaciones globales; limitaciones.
 
 ## Comprobaciones (todas obligatorias)

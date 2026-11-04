@@ -4,6 +4,7 @@ description: Analista de especificaciones SDD. Úsalo para convertir una petici�
 tools: Read, Write, Edit, Glob, Grep, Bash, Skill
 model: inherit
 color: blue
+maxTurns: 40
 ---
 
 ## Función

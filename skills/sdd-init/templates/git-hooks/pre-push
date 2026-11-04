@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+# ai-dev-kit: pre-push — instalado por /sdd-init (setup-project.sh).
+# Bloquea: pushes no fast-forward (forzados), borrados de ramas remotas, secretos en los
+# commits enviados y fallos de .sdd/checks. Si lo lanza Claude Code (CLAUDECODE=1),
+# bloquea además el push a la rama por defecto.
+set -u
+remote="${1:-origin}"
+root=$(git rev-parse --show-toplevel)
+pf="$root/.sdd/preflight.sh"
+checks="$root/.sdd/checks"
+zero=0000000000000000000000000000000000000000
+empty_tree=4b825dc642cb6eb9a060e54bf8d69288fbee4904
+default=$(git symbolic-ref --short -q "refs/remotes/$remote/HEAD" 2>/dev/null | sed "s#^$remote/##")
+if [ -z "$default" ] && [ "${CLAUDECODE:-}" = 1 ]; then
+  default=$(git ls-remote --symref "$remote" HEAD 2>/dev/null | awk '/^ref:/ {sub("refs/heads/","",$2); print $2; exit}')
+fi
+fail=0; pushed=0
+
+while read -r lref lsha rref rsha; do
+  [ -n "${lref:-}" ] || continue
+  branch=${rref#refs/heads/}
+  if [ "$lsha" = "$zero" ]; then
+    echo "ai-dev-kit: bloqueado: borrar '$branch' en $remote" >&2; fail=1; continue
+  fi
+  if [ "${CLAUDECODE:-}" = 1 ]; then
+    case "$branch" in
+      main|master|"${default:-main}")
+        echo "ai-dev-kit: bloqueado: el agente no hace push a la rama por defecto ($branch). Usa una rama de trabajo y un PR." >&2
+        fail=1; continue ;;
+    esac
+  fi
+  if [ "$rsha" != "$zero" ]; then
+    if ! git cat-file -e "$rsha^{commit}" 2>/dev/null; then
+      echo "ai-dev-kit: bloqueado: $remote/$branch tiene commits que no tienes. Haz git fetch y revisa; un push forzado reescribiría historial." >&2
+      fail=1; continue
+    fi
+    if ! git merge-base --is-ancestor "$rsha" "$lsha"; then
+      echo "ai-dev-kit: bloqueado: push no fast-forward (forzado) a '$branch'." >&2
+      fail=1; continue
+    fi
+    base=$rsha
+  else
+    first=$(git rev-list --reverse "$lsha" --not --remotes="$remote" | head -1)
+    [ -n "$first" ] || continue
+    base=$(git rev-parse -q --verify "$first^" 2>/dev/null || echo "$empty_tree")
+  fi
+  pushed=1
+  [ "$lsha" = "$(git rev-parse HEAD)" ] || echo "ai-dev-kit: aviso: .sdd/checks se ejecuta sobre el árbol de trabajo, que no es el commit que envías ($branch)." >&2
+  if [ -f "$pf" ]; then bash "$pf" --range "$base" "$lsha" < /dev/null || fail=1
+  else echo "ai-dev-kit: falta .sdd/preflight.sh" >&2; fail=1; fi
+done
+
+[ "$fail" = 0 ] || { echo "Push bloqueado por ai-dev-kit." >&2; exit 1; }
+[ "$pushed" = 1 ] || exit 0
+if [ -f "$checks" ]; then
+  while IFS= read -r c || [ -n "$c" ]; do
+    case "$c" in ''|'#'*) continue ;; esac
+    echo "ai-dev-kit ▶ $c"
+    if ! (cd "$root" && bash -c "$c") < /dev/null; then
+      echo "ai-dev-kit: falló '$c'. Push bloqueado." >&2; exit 1
+    fi
+  done < "$checks"
+fi
+exit 0

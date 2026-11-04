@@ -18,27 +18,30 @@ argument-hint: "[descripción breve del producto]"
 2. **Detecta el stack** de los manifiestos reales (`package.json`, lockfiles, `pyproject.toml`, `go.mod`, `Cargo.toml`, `Gemfile`, `pom.xml`, `Makefile`, CI). Extrae los comandos reales de pruebas, tipos, lint y build. No asumas un stack ni un gestor de paquetes.
 3. **Equivalentes.** Si ya hay documentos equivalentes (p. ej. `docs/adr/`, `docs/specs/`, un `ARCHITECTURE.md`), reutilízalos y anota su ruta en la constitución en vez de crear copias.
 4. **Constitución** `specs/constitution.md` desde la plantilla. Rellena con hechos detectados. Lo que no puedas inferir (objetivo del producto, protección de rama) márcalo `<PENDIENTE>` y pregunta solo lo que cambie decisiones. Usa `$ARGUMENTS` como objetivo si se dio.
-   - **Publicación automática:** pregunta siempre al usuario si `/sdd-release` debe hacer push de la rama de trabajo cuando todo pase (recomienda activarlo solo si el repo es suyo y `origin` es el remoto correcto). Si acepta: `git config --local sdd.autoPush true`; si no, `git config --local sdd.autoPush false`. Es un ajuste de este clon, no se versiona. Anota el remoto esperado en la sección 8 de la constitución. Sin respuesta, no lo actives.
 5. **memory.md** en la raíz desde la plantilla, solo con hechos verificados (stack, comandos, estado inicial).
 6. **CLAUDE.md del proyecto.** Si no existe, créalo desde `project-CLAUDE.md`. Si existe, añade solo una sección corta "SDD" con los enlaces; no reescribas su contenido.
 7. **Estructura:** `specs/adr/` (con `.gitkeep` si queda vacía). Las features se crean con `/sdd-spec`.
-8. **.gitignore:** comprueba que `.env*` (excepto `.env.example`), claves y artefactos de build estén ignorados, y que `.claude/settings.local.json` también lo esté. Si falta algo, añádelo.
-9. **Orquestador por defecto:** fija `"agent": "sdd-orchestrator"` en `.claude/settings.local.json` (personal, no versionado) para que `claude` en este repo arranque como el coordinador SDD. Fusiona con el archivo si ya existe, sin tocar otras claves:
+8. **Comandos de calidad:** escribe en `.sdd/checks` los comandos reales detectados en el paso 2 (uno por línea: pruebas, tipos, lint). Si ya existe, actualízalo sin borrar líneas del usuario. Enséñaselos al usuario: el hook pre-push y el CI los ejecutarán.
+9. **Salvaguardas (determinista):** ejecuta
    ```bash
-   mkdir -p .claude && f=.claude/settings.local.json; [ -s "$f" ] || echo '{}' > "$f"
-   jq '.agent //= "sdd-orchestrator"' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
-   jq -r .agent "$f"   # si no imprime sdd-orchestrator, ya había otro agente: avisa al usuario
+   bash ${CLAUDE_SKILL_DIR}/scripts/setup-project.sh [--ci]
    ```
-   Si `.claude/settings.local.json` ya fija otro `agent`, no lo sustituyas: avisa al usuario. Para desactivarlo basta con borrar la clave `agent`; `claude --agent <otro>` lo sobrescribe en una sesión.
-10. **Commit inicial opcional:** solo si el usuario lo pide o la constitución lo establece; usa `/sdd-release` en modo docs.
+   Crea o repara `.sdd/preflight.sh`, los hooks de Git `pre-commit` (secretos) y `pre-push` (sin force push ni borrados, secretos en los commits, `.sdd/checks`, y sin push del agente a la rama por defecto), un `.gitignore` seguro y el ajuste `"agent": "sdd-orchestrator"` en `.claude/settings.local.json`. Es idempotente: repítelo para reparar o actualizar. No sobrescribe hooks ajenos ni actúa con `core.hooksPath` (husky, lefthook): en ese caso explica al usuario cómo encadenarlos.
+   - Pasa `--ci` si el repo está en GitHub (o lo estará) y no tiene ya un workflow equivalente; después añade al workflow la preparación del entorno que necesiten los comandos de `.sdd/checks` (setup-node, setup-python, instalación de dependencias).
+10. **Preguntas al usuario** (una sola ronda, con AskUserQuestion; recomienda la primera opción):
+    - **Push automático** de la rama de trabajo cuando todo pase. Solo lo activa el usuario: si quiere, que escriba `! git config --local sdd.autoPush true` (el guard impide que lo hagas tú). Recomiéndalo solo si el repo es suyo y `origin` es el remoto correcto. Anota el remoto esperado en la sección 8 de la constitución.
+    - **Proteger la rama por defecto en GitHub** (sin force push ni borrado, check `sdd-checks` obligatorio, secret scanning y push protection). Si acepta: `bash ${CLAUDE_SKILL_DIR}/scripts/github-protect.sh` (prueba antes con `--dry-run` y enséñale el resultado). Informa de lo que su plan de GitHub no permita.
+    - Si el repo es de terceros (el dueño de `origin` no es el usuario de `gh`), recomienda trabajar con `/sandbox` o en un devcontainer.
+11. **Commit inicial opcional:** solo si el usuario lo pide o la constitución lo establece; usa `/sdd-release` en modo docs.
 
 ## Comprobaciones
 
 - Ningún archivo existente sobrescrito sin leerlo y sin conservar su contenido.
 - `specs/constitution.md` y `memory.md` existen y no contienen secretos.
-- `jq -r .agent .claude/settings.local.json` devuelve `sdd-orchestrator` y `git check-ignore .claude/settings.local.json` confirma que no se versiona.
+- La salida de `setup-project.sh` no tiene pendientes sin explicar al usuario; `.sdd/checks` tiene al menos el comando de pruebas.
+- `git check-ignore .claude/settings.local.json` confirma que no se versiona.
 - Los comandos de calidad anotados existen de verdad (ejecuta al menos `--help`/listado de scripts o la suite si es rápida).
 
 ## Finalización
 
-Informa: archivos creados/modificados, stack detectado, comandos de calidad, campos `<PENDIENTE>`, que a partir de la próxima sesión `claude` en este repo arranca con el orquestador, y siguiente paso (`/sdd-spec <feature>`).
+Informa: archivos creados/modificados, stack detectado, comandos de `.sdd/checks`, salvaguardas activas (hooks, CI, protección de GitHub, push automático sí/no), campos `<PENDIENTE>`, que a partir de la próxima sesión `claude` en este repo arranca con el orquestador, y siguiente paso (`/sdd-spec <feature>`).

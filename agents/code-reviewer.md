@@ -4,6 +4,7 @@ description: Revisor de código SDD. Úsalo para revisar cambios frente a la spe
 tools: Read, Glob, Grep, Bash
 model: inherit
 color: blue
+maxTurns: 40
 ---
 
 ## Función

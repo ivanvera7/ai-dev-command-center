@@ -13,6 +13,10 @@
 | Operaciones destructivas | force push, reescritura de historial, despliegues y migraciones destructivas requieren autorización específica | bloque `CLAUDE.md`, `sdd-release`, agentes |
 | Instalador | no pide credenciales ni instala herramientas externas; valida el manifiesto; rechaza enlaces simbólicos en modo proyecto; copia de seguridad antes de sustituir o retirar | `install.sh`, `uninstall.sh`, `lib/common.sh` |
 
+## Guardarraíles deterministas
+
+El guard de Claude Code, los hooks de Git por proyecto y el CI con rama protegida están descritos en [guardrails.md](guardrails.md).
+
 ## Patrones de secretos detectados
 
 Claves de AWS (`AKIA…`), tokens de GitHub (`ghp_`, `gho_`, `ghu_`, `ghs_`, `ghr_`, `github_pat_`), GitLab (`glpat-`), npm (`npm_`), claves `sk-…` (incluidas `sk-ant-` y `sk-proj-`), Stripe (`sk_live_`, `sk_test_`, `rk_live_`), Slack (`xox?-`), Google (`AIza…`), JWT, `Bearer …`, URL con usuario y contraseña, bloques `PRIVATE KEY`, y asignaciones `password|secret|api_key|access_key|token… = valor` de 8 o más caracteres, con o sin comillas. En la regla genérica de asignación, un valor que sea una referencia a variable (`${X}`, `$X`, `process.env`, `os.environ`, `getenv`, `secrets.X`, `<placeholder>`) no cuenta. Los patrones de proveedor (AKIA, ghp_, glpat-, sk-, xox, AIza, JWT, PRIVATE KEY, URL con credenciales…) bloquean siempre, aunque la línea contenga referencias.

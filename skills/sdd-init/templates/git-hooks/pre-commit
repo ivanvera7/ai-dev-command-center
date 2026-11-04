@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# ai-dev-kit: pre-commit — instalado por /sdd-init (setup-project.sh).
+# Bloquea secretos y archivos sensibles en staging. Saltarlo (git commit --no-verify)
+# es una decisión consciente del humano; el guard de Claude Code se lo impide al agente.
+root=$(git rev-parse --show-toplevel)
+pf="$root/.sdd/preflight.sh"
+if [ ! -f "$pf" ]; then
+  echo "ai-dev-kit: falta .sdd/preflight.sh; ejecuta /sdd-init o restaura el archivo" >&2
+  exit 1
+fi
+exec bash "$pf" --staged < /dev/null

@@ -27,6 +27,12 @@ Cada proyecto la ajusta en la sección 8 de su `specs/constitution.md` (rama pri
 
 El bloque entre `<!-- ai-dev-kit:start -->` y `<!-- ai-dev-kit:end -->` lo gestiona el instalador: tus cambios dentro del bloque se sustituyen al actualizar (con copia). Pon tus reglas fuera del bloque.
 
+## Guard
+
+- Desactivar en una sesión: `AI_DEV_KIT_GUARD=off claude`.
+- Quitarlo: `./uninstall.sh` o `./install.sh` sin el componente `guard` y borrar su entrada de `settings.json`.
+- Ajustar patrones: edita `hooks/ai-dev-kit-guard.sh` en tu fork y añade el caso a `tests/test_guard.sh`.
+
 ## Desactivar el orquestador en un proyecto
 
 Borra la clave `agent` de `.claude/settings.local.json`. Para una sola sesión, `claude --agent <otro>` lo sobrescribe.

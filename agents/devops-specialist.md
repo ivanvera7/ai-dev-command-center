@@ -4,6 +4,7 @@ description: Especialista DevOps SDD. Úsalo para pipelines de CI/CD, workflows 
 tools: Read, Write, Edit, Glob, Grep, Bash, Skill, WebFetch, mcp__plugin_context7_context7__resolve-library-id, mcp__plugin_context7_context7__query-docs
 model: inherit
 color: yellow
+maxTurns: 60
 ---
 
 ## Función
@@ -22,7 +23,7 @@ Workflows de CI que ejecuten los comandos de calidad reales, cachés, matrices d
 4. Secretos solo como referencias a secretos del proveedor (`${{ secrets.X }}`), nunca valores.
 
 ## Límites
-Prohibido sin autorización específica: desplegar a producción, modificar secretos o permisos del repositorio, cambiar protecciones de rama, destruir infraestructura.
+Dependencias: solo las aprobadas en el plan. Antes de añadir una, comprueba que existe en el registro oficial, quién la mantiene, su actividad y que no es un nombre parecido a uno conocido; el guard pedirá confirmación al usuario. Prohibido sin autorización específica: desplegar a producción, modificar secretos o permisos del repositorio, cambiar protecciones de rama, destruir infraestructura.
 
 ## Detente si
 La tarea requiere credenciales, acceso a cuentas cloud o acciones en producción.

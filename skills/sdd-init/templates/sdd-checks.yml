@@ -1,0 +1,41 @@
+# ai-dev-kit: CI del proyecto. Ejecuta el escaneo de secretos y .sdd/checks.
+# Ajusta "branches" si tu rama por defecto no es main ni master.
+# Añade antes de "Comprobaciones de calidad" la preparación del entorno (setup-node,
+# setup-python, instalación de dependencias…) que necesiten los comandos de .sdd/checks.
+name: sdd-checks
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  sdd-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Secretos en los commits nuevos
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          DEFAULT: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ -z "$BASE" ] || [ "$BASE" = 0000000000000000000000000000000000000000 ] || ! git cat-file -e "$BASE^{commit}" 2>/dev/null; then
+            BASE=$(git merge-base "origin/$DEFAULT" "$GITHUB_SHA" 2>/dev/null || echo 4b825dc642cb6eb9a060e54bf8d69288fbee4904)
+          fi
+          # En un PR se usa el escáner de la rama base: el PR no puede debilitar su propio escaneo.
+          pf=.sdd/preflight.sh
+          if git cat-file -e "$BASE:.sdd/preflight.sh" 2>/dev/null; then git show "$BASE:.sdd/preflight.sh" > "$RUNNER_TEMP/preflight.sh"; pf="$RUNNER_TEMP/preflight.sh"; fi
+          bash "$pf" --range "$BASE" "$GITHUB_SHA"
+      - name: Comprobaciones de calidad (.sdd/checks)
+        run: |
+          test -f .sdd/checks || { echo "falta .sdd/checks"; exit 1; }
+          grep -Ev '^[[:space:]]*(#|$)' .sdd/checks | while IFS= read -r c; do
+            echo "▶ $c"
+            bash -c "$c" < /dev/null || exit 1
+          done

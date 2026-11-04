@@ -49,10 +49,14 @@ Precedencia de Claude Code: si una skill existe como personal (`~/.claude/skills
 
 | Opción | Efecto |
 |---|---|
-| `--only agents,skills,instructions` | Instala solo esos componentes |
+| `--only agents,skills,instructions,guard` | Instala solo esos componentes (por defecto, todos) |
 | `--dry-run` | Muestra el plan sin cambiar nada |
 | `--yes` | Aplica sin preguntar |
 | `--force` | Sustituye archivos en conflicto o modificados por ti, con copia de seguridad |
+
+## Componente guard
+
+Copia `hooks/ai-dev-kit-guard.sh` a `<destino>/hooks/` y añade un hook `PreToolUse` a `<destino>/settings.json` con jq, conservando el resto de ajustes y hooks (con copia de seguridad y confirmación). Reinstalar no lo duplica; desinstalar quita solo esa entrada. En modo proyecto el comando usa `$CLAUDE_PROJECT_DIR`, así que `.claude/settings.json` se puede versionar para todo el equipo. Sin jq, el guard no se instala y el informe lo dice. Ver [guardrails.md](guardrails.md).
 
 ## Conflictos
 
@@ -83,6 +87,6 @@ Hace `git pull --ff-only` en el repo del kit (se detiene si tiene cambios locale
 ./uninstall.sh --project ../mi-app   # proyecto
 ```
 
-Retira los archivos del manifiesto que no has modificado y el bloque de `CLAUDE.md`, que queda como estaba antes de instalar (si el kit creó el archivo y queda vacío, lo borra). Conserva tus modificaciones (salvo `--force`), tus otros agentes y skills, settings, specs y `memory.md` de tus proyectos. Las copias de seguridad quedan en `<destino>/.ai-dev-kit/backups/`.
+Retira los archivos del manifiesto que no has modificado, la entrada del guard en `settings.json` (si falta jq, se detiene sin tocar nada) y el bloque de `CLAUDE.md`, que queda como estaba antes de instalar (si el kit creó el archivo y queda vacío, lo borra). Conserva tus modificaciones (salvo `--force`), tus otros agentes y skills, settings, specs y `memory.md` de tus proyectos. Las copias de seguridad quedan en `<destino>/.ai-dev-kit/backups/`.
 
 El ajuste `"agent": "sdd-orchestrator"` que `/sdd-init` escribe en `.claude/settings.local.json` de cada proyecto no lo gestiona el instalador: bórralo a mano si desinstalas.

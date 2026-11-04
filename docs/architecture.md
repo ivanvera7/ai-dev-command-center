@@ -16,11 +16,14 @@
         │                                security-reviewer · debugger
         ▼
    sdd-init/templates/*   plantillas de los artefactos
-   sdd-release/scripts/preflight.sh   comprobación previa al commit
+   sdd-init/scripts/setup-project.sh · github-protect.sh   salvaguardas del proyecto
+   sdd-release/scripts/preflight.sh   comprobación de secretos, rama y remoto
+   hooks/ai-dev-kit-guard.sh          guard (PreToolUse)
         │
         ▼
    Proyecto: specs/constitution.md · specs/<feature>/{spec,plan,tasks,acceptance}.md
-             specs/adr/ · memory.md · CLAUDE.md
+             specs/adr/ · memory.md · CLAUDE.md · .sdd/{checks,preflight.sh}
+             .git/hooks/{pre-commit,pre-push} · .github/workflows/sdd-checks.yml
 ```
 
 ## Capas
@@ -37,7 +40,7 @@
 - **Instalador con manifiesto en vez de plugin.** Un plugin de Claude Code prefija las skills (`/plugin:sdd-init`) e ignora `permissionMode` en sus subagentes. El instalador mantiene los nombres cortos y permite instalación global o por proyecto.
 - **Rutas portables.** Las skills usan `${CLAUDE_SKILL_DIR}`, que Claude Code sustituye por la carpeta real de la skill, y las rutas entre skills son relativas (`${CLAUDE_SKILL_DIR}/../sdd-init/templates`). Los agentes, que no tienen esa sustitución, usan el marcador `<skills>` explicado en su propio archivo.
 - **Orquestador como agente principal.** Un subagente no puede preguntar al usuario; el orquestador sí, porque corre como hilo principal (`agent` en settings o `claude --agent`). Delegar en subagentes está permitido hasta tres niveles por Claude Code.
-- **Sin hooks propios.** Las garantías de Git (sin force push, puerta de calidad, escaneo de secretos) están en `sdd-release` y `preflight.sh`. Los hooks que puedas tener (RTK, Caveman) pertenecen a esas herramientas.
+- **Tres capas que hacen cumplir las reglas.** Guard (hook `PreToolUse` de Claude Code), hooks de Git por clon (`setup-project.sh`) y CI con rama protegida en GitHub. Ver [guardrails.md](guardrails.md).
 - **Bash 3.2.** El instalador funciona con el bash que trae macOS, sin dependencias.
 
 ## Estado del instalador

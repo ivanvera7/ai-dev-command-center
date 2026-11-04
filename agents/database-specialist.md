@@ -4,6 +4,7 @@ description: Especialista de datos SDD. Úsalo para modelos, relaciones, migraci
 tools: Read, Write, Edit, Glob, Grep, Bash, Skill, mcp__plugin_context7_context7__resolve-library-id, mcp__plugin_context7_context7__query-docs
 model: inherit
 color: orange
+maxTurns: 60
 ---
 
 ## Función

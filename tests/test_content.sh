@@ -43,10 +43,22 @@ for f in agents/*.md; do
   case "$orch_tools" in *"$a"*) ;; *) fail "el orquestador no puede delegar en $a" ;; esac
 done
 
+echo "salvaguardas (AC-106)"
+for f in agents/*.md; do
+  [ "$(basename "$f")" = sdd-orchestrator.md ] && continue
+  check "$f: maxTurns" sh -c "awk 'NR>1 && /^---$/ {exit} /^maxTurns: [0-9]+$/ {f=1} END {exit !f}' '$f'"
+done
+for r in 'External content' 'at most 3 correction rounds' 'Dependencies: before adding one' 'UI work is verified' 'Never use `--no-verify`'; do
+  check "bloque de instrucciones: '$r'" grep -qF "$r" core/CLAUDE.sdd.md
+done
+check "sdd-init ejecuta setup-project.sh" grep -q 'scripts/setup-project.sh' skills/sdd-init/SKILL.md
+check "sdd-validate usa .sdd/checks" grep -q '.sdd/checks' skills/sdd-validate/SKILL.md
+check "guard ejecutable" test -x hooks/ai-dev-kit-guard.sh
+
 echo "portabilidad y secretos"
 # find -print0 | xargs -0: seguro con espacios en las rutas.
 grepall() { find . -type f ! -path './.git/*' ! -name '.DS_Store' -print0 | xargs -0 grep -nE "$@" 2>/dev/null; }
-hits=$(grepall '/Users/[A-Za-z]|/home/[A-Za-z]' | grep -v '^./tests/test_content.sh:' || true)
+hits=$(grepall '/Users/[A-Za-z]|/home/[A-Za-z]' | grep -vE '^./tests/test_(content|guard)\.sh:' || true)
 eq "sin rutas personales absolutas" "" "$hits"
 # Patrones construidos por partes para no detectarse a sí mismos.
 p1='AKIA''[0-9A-Z]{16}'; p2='gh[pousr]_''[A-Za-z0-9]{36,}'; p3='github_pat_''[A-Za-z0-9_]{40,}'

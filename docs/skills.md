@@ -25,6 +25,9 @@ Once skills en [`skills/`](../skills/). Todas se pueden invocar escribiendo `/no
 | `sdd-init/templates/adr.md` | decisiones de arquitectura |
 | `sdd-init/templates/memory.md` | memoria del proyecto |
 | `sdd-init/templates/project-CLAUDE.md` | `CLAUDE.md` mínimo del proyecto |
+| `sdd-init/scripts/setup-project.sh` | configura `.sdd/`, hooks de Git, `.gitignore`, agente por defecto y CI (ver [guardrails.md](guardrails.md)) |
+| `sdd-init/scripts/github-protect.sh` | protege la rama por defecto en GitHub, con autorización del usuario |
+| `sdd-init/templates/git-hooks/*`, `checks`, `sdd-checks.yml` | plantillas de hooks, comandos de calidad y CI |
 | `sdd-release/scripts/preflight.sh` | comprobación previa al commit (ver [security.md](security.md)) |
 | `sdd-release/scripts/preflight.test.sh` | autotest del preflight |
 

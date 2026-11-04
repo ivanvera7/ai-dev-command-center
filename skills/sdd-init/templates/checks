@@ -1,0 +1,6 @@
+# ai-dev-kit: comandos de calidad del proyecto, uno por línea.
+# Los ejecutan el hook pre-push, el workflow de CI (sdd-checks) y /sdd-validate.
+# Las líneas vacías y las que empiezan por # se ignoran. Ejemplos:
+#   npm test
+#   npm run lint
+#   npx tsc --noEmit
