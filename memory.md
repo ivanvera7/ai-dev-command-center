@@ -1,7 +1,7 @@
 # Memoria del proyecto — AI Dev Command Center
 
 > Resumen breve del contexto y estado real. Solo hechos verificados. Sin secretos ni datos personales.
-> Última actualización: 2026-10-27
+> Última actualización: 2026-11-04
 
 ## Stack
 - Markdown (agentes y skills en formato nativo de Claude Code) + Bash 3.2 compatible.
@@ -25,19 +25,23 @@
 | Feature | Estado | Spec |
 |---|---|---|
 | kit 1.0.0 | publicado en github.com/ivanvera7/ai-dev-command-center; CI en verde | specs/kit/spec.md |
+| guardrails 1.1.0 | implementado, revisado y con CI en verde; instalado en el ~/.claude del autor | specs/guardrails/spec.md |
 
 ## Estado actual
-- Versión 1.0.0 publicada. Origen: configuración SDD real del autor, con rutas portables.
+- Versión 1.1.0: guard (PreToolUse), hooks de Git por proyecto vía `/sdd-init` → `setup-project.sh`, CI `sdd-checks`, `github-protect.sh`, reglas de contenido externo, dependencias, 3 rondas y verificación visual. Detalle: docs/guardrails.md. Origen: configuración SDD real del autor, con rutas portables.
 - Revisión de código (2 rondas) y de seguridad (3 rondas) completadas; hallazgos corregidos con pruebas: validación del manifiesto, enlaces simbólicos en modo proyecto, marcadores de CLAUDE.md, preflight (patrones, diff sin textconv, solo archivo:línea), push automático opcional por clon (`git config --local sdd.autoPush true`).
 
 ## Errores conocidos
+- Guard heurístico: no ve código en `python -c`/`node -e`, alias de git ni opciones entre comillas; falsos positivos con heredocs o textos que contienen comandos peligrosos y con redirecciones que mencionan `.git/hooks` (docs/guardrails.md).
+- Los comandos `!` de Claude Code pueden heredar la variable que identifica al agente: el push humano a `main` debe hacerse desde la terminal.
 - Sin `origin/HEAD`, `preflight --push` solo reconoce `main` y `master` como rama por defecto.
 
 ## Pruebas relevantes
-- `bash tests/run.sh`: 202 comprobaciones en verde (2026-10-27, macOS, bash 3.2).
+- `bash tests/run.sh`: 455 comprobaciones en verde (2026-10-27, macOS, bash 3.2); CI en ubuntu-latest, macos-latest y shellcheck en verde.
 - Sesión real de Claude Code con `CLAUDE_CONFIG_DIR` aislado: carga los 12 agentes y las 11 skills; la ejecución del modelo no es posible en esa configuración sin iniciar sesión.
 - `${CLAUDE_SKILL_DIR}` sustituido por la ruta real de la skill (comprobado con una skill desechable).
 
 ## Próximos pasos y bloqueos
-- Probar el flujo SDD completo con el kit instalado de forma gestionada (hasta ahora se probó con la instalación manual equivalente).
+- Verificar `/sdd-init` de principio a fin en una sesión interactiva (T-109).
+- Probar el flujo SDD completo con el kit 1.1 instalado de forma gestionada.
 - Posible versión en inglés de la documentación.
